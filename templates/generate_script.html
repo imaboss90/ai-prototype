@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Script - Talent Casting Agency{% endblock %}
+
+{% block content %}
+<style>
+
+    html, body {
+        height: 100vh;
+        overflow: hidden; 
+        margin: 0;
+    }
+    
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        padding: 20px;
+        height: 100vh;
+        align-items: center; 
+        justify-content: center;
+        margin-left: 100px;
+        height: calc(100vh - 60px);
+    }   
+    
+    .generate-section {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        padding-left: 50px;
+        width: 600px;
+    }
+
+    .generate-title {
+        font-size: 60px;
+        font-weight: bold;
+        color: #8888ff;
+        margin-bottom: 50px;
+        max-width: 600px; 
+        word-wrap: break-word;
+        background: linear-gradient(90deg, #7f00ff, #e100ff, blue);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradientAnimation 6s infinite alternate;
+    }
+
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+    }
+
+    .textbox {
+        width: 500px;
+        height: 350px;
+        background: #1E1E1E;
+        color: white;
+        border: none;
+        padding: 10px;
+        font-size: 16px;
+        margin-top: 20px;
+        resize: none;
+    }
+
+    .generate-actions {
+        display: flex;
+        align-items: center;
+        margin-top: 32px;
+        margin-bottom: 50px;
+    }
+
+    .generate-btn {
+        background-color: #1E1E1E;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 15px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .generating-text {
+        margin-left: auto;
+        font-size: 14px;
+        color: white;
+    }
+
+
+    .script-section {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start; 
+        margin-bottom: 70px;
+    }
+
+    .script-viewer {
+        flex: 1;
+        padding: 15px;
+        border-radius: 5px;
+        overflow: hidden;
+        height: 700px; 
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .script-content {
+        width: 100%; 
+        max-width: 700px;
+        height: 900px;
+        max-height: 800px; 
+        
+        background: #1E1E1E;
+        padding: 10px;
+        border-radius: 5px;
+        color: white;
+        font-family: monospace;
+        white-space: pre-wrap;
+        line-height: 1.6;
+        overflow-y: auto; 
+        scrollbar-width: none; 
+    }
+
+    .script-content::-webkit-scrollbar {
+        display: none; 
+    }
+    .skip-button {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .loader {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        border: 2px solid white;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 10px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    let typingInterval;
+    function typeWriterEffect(element, text, speed) {
+        let i = 0;
+        element.innerHTML = "";
+        function type() {
+            if (i < text.length) {
+                element.innerHTML += text.charAt(i);
+                element.scrollTop = element.scrollHeight; // Auto scroll down
+                i++;
+                typingInterval = setTimeout(type, speed);
+            }
+        }
+        type();
+    }
+    
+    function startGenerating(event) {
+        document.getElementById("generating-container").style.display = "inline-flex";
+        document.getElementById("status-text").innerText = "Scripting";
+        document.getElementById("loading-spinner").style.display = "inline-block";
+    }
+    
+    function skipTyping() {
+        clearTimeout(typingInterval); // Stop ongoing typing effect
+        const scriptContent = document.querySelector(".script-content");
+        if (scriptContent) {
+            scriptContent.innerHTML = scriptContent.getAttribute("data-full-text");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const scriptContent = document.querySelector(".script-content");
+        if (scriptContent) {
+            const text = scriptContent.textContent;
+            scriptContent.setAttribute("data-full-text", text);
+            typeWriterEffect(scriptContent, text, 50);
+        }
+    });
+</script>
+
+<div class="grid-container">
+    <div class="generate-section">
+        <div class="generate-title">Type a prompt to generate a script with OpenAI</div>
+        <form method="POST" onsubmit="startGenerating(event)">
+            <textarea class="textbox" name="prompt" placeholder="Type here"></textarea>
+            <div class="generate-actions">
+                <button type="submit" class="generate-btn">Generate</button>
+                <span class="generating-text" id="generating-container" style="display: none;">
+                    <span id="status-text">Scripting</span>
+                    <span class="loader" id="loading-spinner"></span>
+                </span>
+            </div>
+        </form>
+    </div>
+    
+    <div class="script-section">
+        {% if generated_script %}
+            <div class="script-viewer">
+                <pre class="script-content">{{ generated_script.Script }}</pre>
+                <button class="skip-button" onclick="skipTyping()">Skip</button>
+                <script>
+                    // Ensure this runs only after the page fully loads
+                    window.onload = function() {
+                        document.getElementById("status-text").innerText = "All done!";
+                        document.getElementById("loading-spinner").style.display = "none";
+                    };
+                </script>
+            </div>
+        {% else %}
+            <p>No script generated yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

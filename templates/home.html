@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Talent Casting Agency{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        margin: 0;
+        background-color: #000;
+        overflow: hidden;
+    }
+    .hero-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 70vh;
+        text-align: center;
+        margin-top: 60px; 
+    }
+    .hero h1 {
+        font-size: 7rem;
+        font-weight: bold;
+        line-height: 1.2;
+        background: linear-gradient(90deg, #7f00ff, #e100ff, blue);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradientAnimation 6s infinite alternate;
+    }
+    .powered-by {
+        margin-top: 20px;
+        font-size: 2.0rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        color: white;
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .powered-by img {
+        width: 195px;
+        height: 55px;
+        object-fit: contain; 
+       
+    }
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+    }
+</style>
+
+<div class="hero-container">
+    <section class="hero">
+        <h1>Revolutionizing <br> the Future of <br> Film & TV with AI</h1>
+        <div class="powered-by">
+            <p>Powered by</p>
+            <img src="{{ url_for('static', filename='chatlogo.png', _external=True) }}" alt="OpenAI">
+
+
+
+
+        </div>
+    </section>
+</div>
+
+{% endblock %}

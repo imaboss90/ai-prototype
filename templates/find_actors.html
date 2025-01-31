@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Find Actors{% endblock %}
+
+{% block content %}
+
+    <div class="search-container">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search Name" oninput="applyFilters()">
+            <button class="search-icon">&#128269;</button>
+        </div>
+
+        <div class="filters">
+            <div class="filter-dropdown">
+                <button class="filter-btn" onclick="toggleDropdown('genderDropdown')">Gender</button>
+                <div id="genderDropdown" class="dropdown-content">
+                    <p onclick="setFilter('gender', 'Male')">Male</p>
+                    <p onclick="setFilter('gender', 'Female')">Female</p>
+                    <p onclick="setFilter('gender', 'Other')">Other</p>
+                </div>
+                <div class="filter-tags" id="genderTags"></div>
+            </div>
+
+            <div class="filter-dropdown">
+                <button class="filter-btn" onclick="toggleDropdown('ageDropdown')">Age Range</button>
+                <div id="ageDropdown" class="dropdown-content">
+                    <p onclick="setFilter('age', '18-24')">18-24</p>
+                    <p onclick="setFilter('age', '24-35')">24-35</p>
+                    <p onclick="setFilter('age', '35-50')">35-50</p>
+                    <p onclick="setFilter('age', '50-70')">50-70</p>
+                    <p onclick="setFilter('age', '70+')">70+</p>
+                </div>
+                <div class="filter-tags" id="ageTags"></div>
+            </div>
+
+            <div class="filter-dropdown">
+                <button class="filter-btn" onclick="toggleDropdown('locationDropdown')">Location</button>
+                <div id="locationDropdown" class="dropdown-content" onclick="event.stopPropagation();">
+                    <input type="text" id="locationInput" placeholder="Enter Location" oninput="setFilter('location', this.value)">
+                </div>
+                <div class="filter-tags" id="locationTags"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="actors-container">
+        <div class="actors-grid">
+            {% for actor in actors %}
+                <div class="actor-card" 
+                     data-id="{{ actor['_id'] }}" 
+                     data-name="{{ actor['name'] }}"
+                     data-gender="{{ actor['gender'] }}"
+                     data-age="{{ actor['age'] }}"
+                     data-race="{{ actor['race'] }}"
+                     data-height="{{ actor['height'] }}"
+                     data-location="{{ actor['location'] }}"
+                     data-languages="{{ actor['languages'] | join(', ') }}"
+                     data-roles="{{ actor['roles'] | join(', ') }}"
+                     onclick="openModal(this)">
+                    
+                     <img class="actor-img" src="{{ actor.image_url }}" alt="{{ actor.name }}">
+
+                    <div class="actor-info">
+                        <h3>{{ actor['name'] }}</h3>
+                        <p>{{ actor['location'] }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="actorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Actor Image">
+                <div class="modal-info">
+                    <h2 id="modalName"></h2>
+                    <p><strong>Gender:</strong> <span id="modalGender"></span></p>
+                    <p><strong>Age:</strong> <span id="modalAge"></span></p>
+                    <p><strong>Race:</strong> <span id="modalRace"></span></p>
+                    <p><strong>Height:</strong> <span id="modalHeight"></span></p>
+                    <p><strong>Location:</strong> <span id="modalLocation"></span></p>
+                    <p><strong>Languages:</strong> <span id="modalLanguages"></span></p>
+                    <p><strong>Roles:</strong> <span id="modalRoles"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<style>
+   
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: #1a1a1a;
+        color: white;
+        font-family: Arial, sans-serif;
+    }
+
+    .navbar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 90px;
+        position: relative;
+        background-color: #1a1a1a;
+    }
+
+    .menu-icon {
+        position: absolute;
+        left: 15px;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 20px;
+    }
+
+    .nav-links a {
+        text-decoration: none;
+        color: white;
+        font-weight: bold;
+    }
+
+    .nav-links a:hover {
+        text-decoration: underline;
+    }
+
+        
+    .search-container {
+        display: flex;
+        align-items: flex-start; 
+        justify-content: center;
+        gap: 8px; 
+        margin: 20px 0;
+        flex-wrap: wrap;
+    }
+
+    
+    .search-bar {
+        display: flex;
+        align-items: center;
+        background-color: #1E1E1E;
+        padding: 8px 12px; 
+        border-radius: 5px;
+        margin-right: 400px;
+        width: 500px;
+        height: 35px;
+    }
+
+    .search-bar input {
+        background: none;
+        border: none;
+        color: white;
+        width: 100%;
+        outline: none;
+        font-size: 14px;
+    }
+
+    
+    .search-icon {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+   
+    .filters {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-right: 10px;
+    }
+
+    .filter-btn {
+        background-color: #333;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .filter-btn:hover {
+        background-color: #555;
+    }
+
+    
+    .actors-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .actors-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr); 
+        margin-top: 50px;
+        gap: 65px;
+        justify-items: center;
+    }
+
+   
+    .actor-card {
+        background-color: #1E1E1E;
+        border-radius: 10px;
+        overflow: hidden;
+        text-align: center;
+        width: 245px;
+        height: 320px;
+        padding-bottom: 10px;
+        cursor: pointer;
+    }
+
+    .actor-card img {
+        width: 100%;
+        height: auto;
+    }
+
+    .actor-info {
+        padding: 5px;
+    }
+
+    .actor-info h3 {
+        margin: 10px 0 5px;
+        font-size: 18px;
+    }
+
+    .actor-info p {
+        margin: 0;
+        font-size: 14px;
+        color: #bbb;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: #1E1E1E;
+        padding: 20px;
+        width: 755px;
+        height: 335px;
+        max-width: 800px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    .modal-body {
+        display: flex;
+        align-items: center; 
+        gap: 20px; 
+        justify-content: center; 
+    }
+
+    .modal-body img {
+        width: 250px; 
+        height: 280px; 
+        border-radius: 10px;
+        object-fit: cover; 
+    }
+
+    .modal-info {
+        flex: 1; 
+        text-align: left; 
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .modalName{
+        top: 2px;
+        padding: 15px;
+        
+    }
+    .close {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 30px;
+        cursor: pointer;
+    }
+
+    .filter-dropdown {
+        position: relative;
+        display: inline-block;
+        gap: 10px;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #333;
+        min-width: 100%;
+        border-radius: 5px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+        padding: 10px;
+    }
+
+    .dropdown-content p {
+        color: white;
+        padding: 5px;
+        cursor: pointer;
+    }
+
+    .dropdown-content p:hover {
+        background-color: #555;
+    }
+
+    .dropdown-content input {
+        width: 100%;
+        padding: 5px;
+        background-color: #1E1E1E;
+        border: none;
+        color: white;
+    }
+
+    .show {
+        display: block;
+    }
+
+    .filter-tags {
+        min-height: 30px;
+        display: flex;
+        margin-top: 5px;
+    }
+
+    .filter-tag {
+        background-color: #444;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .filter-tag span {
+        margin-left: 5px;
+        color: red;
+        font-weight: bold;
+    }
+</style>
+
+    <!-- JavaScript for Loading Images -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll(".actor-card").forEach(actorCard => {
+                const actorId = actorCard.dataset.id;
+                const imgElement = document.getElementById(`actor-img-${actorId}`);
+    
+                console.log(`Fetching image for Actor ID: ${actorId}`);
+    
+                fetch(`/api/actor_image/${actorId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.image) {
+                            imgElement.src = data.image;
+                        } else {
+                            console.warn(`No image found for Actor ID: ${actorId}`);
+                            imgElement.src = "/static/no-image.jpg"; // Default placeholder
+                        }
+                    })
+                    .catch(error => console.error(`Error loading image for ${actorId}:`, error));
+            });
+        });
+
+    
+        function openModal(element) {
+            document.getElementById("modalImage").src = element.querySelector("img").src;
+            document.getElementById("modalName").textContent = element.dataset.name;
+            document.getElementById("modalGender").textContent = element.dataset.gender;
+            document.getElementById("modalAge").textContent = element.dataset.age;
+            document.getElementById("modalRace").textContent = element.dataset.race;
+            document.getElementById("modalHeight").textContent = element.dataset.height;
+            document.getElementById("modalLocation").textContent = element.dataset.location;
+            document.getElementById("modalLanguages").textContent = element.dataset.languages;
+            document.getElementById("modalRoles").textContent = element.dataset.roles;
+    
+            document.getElementById("actorModal").style.display = "flex";
+        }
+    
+        function closeModal() {
+            document.getElementById("actorModal").style.display = "none";
+        }
+    
+        let activeFilters = { gender: '', age: '', location: '' };
+
+        function toggleDropdown(dropdownId) {
+            document.querySelectorAll(".dropdown-content").forEach(dropdown => {
+                if (dropdown.id !== dropdownId) dropdown.classList.remove("show");
+            });
+            document.getElementById(dropdownId).classList.toggle("show");
+        }
+
+        function setFilter(type, value) {
+            activeFilters[type] = value.toLowerCase();
+            updateActiveFilters();
+            applyFilters();
+        }
+
+        function updateActiveFilters() {
+            Object.keys(activeFilters).forEach(key => {
+                let tagContainer = document.getElementById(`${key}Tags`);
+                tagContainer.innerHTML = '';
+
+                if (activeFilters[key]) {
+                    let filterTag = document.createElement("div");
+                    filterTag.classList.add("filter-tag");
+                    filterTag.innerHTML = `${activeFilters[key]} <span onclick="removeFilter('${key}')">✖</span>`;
+                    tagContainer.appendChild(filterTag);
+                }
+            });
+        }
+
+        function removeFilter(type) {
+            activeFilters[type] = '';
+            updateActiveFilters();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let searchQuery = document.getElementById("searchInput").value.toLowerCase().trim();
+            let locationQuery = document.getElementById("locationInput").value.toLowerCase().trim();
+            let actorCards = document.querySelectorAll(".actor-card");
+
+            actorCards.forEach(card => {
+                let actorName = card.dataset.name.toLowerCase();
+                let actorGender = card.dataset.gender.toLowerCase();
+                let actorAge = parseInt(card.dataset.age);
+                let actorLocation = card.dataset.location.toLowerCase();
+
+                let matchesSearch = actorName.includes(searchQuery);
+                let matchesGender = activeFilters.gender === '' || actorGender === activeFilters.gender;
+                let matchesAge = checkAgeRange(actorAge, activeFilters.age);
+                let matchesLocation = activeFilters.location === '' || actorLocation.includes(locationQuery);
+
+                if (matchesSearch && matchesGender && matchesAge && matchesLocation) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        function checkAgeRange(age, range) {
+            if (!range) return true;
+            let [min, max] = range.split('-').map(Number);
+            return range === "70+" ? age >= 70 : (age >= min && age <= max);
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.filter-btn') && !event.target.matches('.dropdown-content input')) {
+                document.querySelectorAll(".dropdown-content").forEach(dropdown => dropdown.classList.remove("show"));
+            }
+        }
+    </script>
+{% endblock %}

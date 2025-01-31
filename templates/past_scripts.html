@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Past Scripts - Talent Casting Agency{% endblock %}
+
+{% block content %}
+
+<div class="search-container">
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search scripts..." oninput="filterScripts()">
+        <button class="search-icon">🔍</button>
+    </div>
+    <div class="status-text">
+        Fully Assigned: <span class="checkmark">✔</span> Unassigned: <span class="crossmark">❌</span>
+    </div>
+    
+</div>
+<div class="scripts-container">
+    {% if scripts %}
+        {% for script in scripts %}
+            <div class="script-box" data-id="{{ script['_id'] }}" data-title="{{ script['Title'].lower() }}" onclick="toggleScript(this)">
+                <div class="script-header">
+                    <span class="script-title">{{ script['Title'] }}</span>
+                    <div class="details">
+                        <span>Roles: {{ script['role_numbers'] }}</span>
+                        <span>{{ script.get('Date', '').strftime('%m/%d/%y') if script.get('Date') else 'Unknown Date' }}</span>
+                        <span class="status {{ 'check' if script['complete'] else 'cross' }}">{{ '✔' if script['complete'] else '❌' }}</span>
+
+
+                    </div>
+                </div>
+            </div>
+            <div class="script-details" id="script-{{ script['_id'] }}">
+                <div class="grid">
+                    <div class="script-viewer">
+                        <pre class="script-content">{{ script['Script'] | safe }}</pre>
+                    </div>
+                    <div class="actors-container">
+                        {% for role in script['RolesList'] %}
+                        <div class="role-block">
+                            <div class="role-info">
+                                <h4>Role: {{ role['role_name'] }}</h4>
+                                <p><strong>Gender:</strong> {{ role.get('gender', 'N/A') }}</p>
+                                <p><strong>Age Range:</strong> {{ role.get('age_range', 'N/A') }}</p>
+                                <p><strong>Race:</strong> {{ role.get('race', 'N/A') }}</p>
+                                <p><strong>Languages Spoken:</strong> {{ ", ".join(role.get('languages_spoken', ['N/A'])) }}</p>
+                                <p><strong>Physical Traits:</strong> {{ role.get('physical_traits', 'N/A') }}</p>
+                                <p><strong>Personality Traits:</strong> {{ role.get('personality_traits', 'N/A') }}</p>
+                                <p><strong>Notable Characteristics:</strong> {{ role.get('notable_characteristics', 'N/A') }}</p>
+                            </div>
+                            {% if role.get('actor_id') %}
+                            <div class="actor-info">
+                                <img src="{{ role.get('actor_image_url', '/static/no-image.jpg') }}" alt="Actor Image" class="actor-image">
+                                <p class="actor-name">{{ role.get('actor_name', 'Unknown') }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No scripts generated yet.</p>
+    {% endif %}
+</div>
+
+<style>
+    .search-container {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    width: 66%; 
+    margin: 50px auto;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #1E1E1E;
+    padding: 8px 12px;
+    border-radius: 5px;
+    width: 600px;
+    height: 50px;
+}
+
+
+.status-text {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.checkmark {
+    color: green; 
+    font-weight: bold;
+}
+
+.crossmark {
+    color: red; 
+    font-weight: bold;
+}
+
+    .search-bar input {
+        background: none;
+        border: none;
+        color: white;
+        width: 100%;
+        outline: none;
+        font-size: 16px;
+    }
+
+    .search-icon{
+        background-color: #1E1E1E;
+    }
+
+    .scripts-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .script-box {
+        background: #222;
+        padding: 15px;
+        border-radius: 10px;
+        width: 66%;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .script-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .details {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .script-details {
+        display: none;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 10px;
+        width: 66%;
+    }
+
+    .script-title {
+        text-transform: uppercase; 
+        letter-spacing: 2px;
+        text-align: center; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .script-viewer {
+        background: #f4f4f4;
+        padding: 15px;
+        border-radius: 5px;
+        overflow: hidden;
+        height: 400px;
+        max-width: 100%;
+    }
+
+    .script-content {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        color: black;
+        font-family: monospace;
+        white-space: pre-wrap;
+        line-height: 1.6;
+    }
+
+    .actors-container {
+        background: #f4f4f4;
+        padding: 10px;
+        max-height: 400px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .role-block {
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .role-info {
+        flex: 1;
+        color: black;
+        font-family: monospace;
+        min-width: 70%;
+    }
+
+    .actor-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 120px; 
+        max-width: 120px;
+        text-align: center;
+    }
+
+    .actor-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .actor-name {
+        font-size: 14px;
+        margin-top: 5px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        font-family: monospace;
+        color: black;
+        text-align: center;
+        max-width: 100px; 
+    }
+
+    .status {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .check {
+        color: green;
+    }
+
+    .cross {
+        color: white;
+    }
+
+</style>
+
+<script>
+    function toggleScript(element) {
+        var scriptId = element.getAttribute('data-id');
+        var details = document.getElementById('script-' + scriptId);
+        details.style.display = details.style.display === 'none' || details.style.display === '' ? 'block' : 'none';
+    }
+
+    function filterScripts() {
+        let input = document.getElementById("searchInput").value.toLowerCase();
+        let scriptBoxes = document.querySelectorAll(".script-box");
+
+        scriptBoxes.forEach(box => {
+            let title = box.getAttribute("data-title");
+            if (title.includes(input)) {
+                box.style.display = "block";
+            } else {
+                box.style.display = "none";
+            }
+        });
+    }
+</script>
+
+{% endblock %}

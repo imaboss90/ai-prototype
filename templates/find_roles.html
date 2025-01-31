@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block title %}Find Roles{% endblock %}
+
+{% block content %}
+<form method="POST">
+    <div class="centered-container">
+        <div class="filters-container">
+            <div class="dropdown-container">
+                <label class="script-label">Select a script:</label>
+                <select name="script_id" id="scriptDropdown" onchange="updateRoleCount()">
+                    {% for script in scripts %}
+                        <option value="{{ script['_id'] }}" 
+                            data-role-count="{{ script.get('role_numbers', 0) }}" 
+                            data-complete="{{ script.get('complete', False) }}"
+                            {% if script['_id'] == script_id %}selected{% endif %}>
+                            {{ script['Title'] }}
+                        </option>
+                    {% endfor %}
+                </select>
+                
+                <button type="submit" class="find-roles-btn">Find Roles</button>
+            </div>
+
+            <div class="dropdown-container right-dropdown">
+                <label class="role-label">Roles:</label>
+                <select name="role_filter" id="roleDropdown">
+                    <option value="all">All Roles</option>
+                    {% for role in roles %}
+                        <option value="{{ role['role_name'] }}">{{ role['role_name'] }}</option>
+                    {% endfor %}
+                </select>
+                <span id="filterTag" class="filter-tag">Showing: All Roles</span>
+            </div>
+        </div>
+    </div>
+</form>
+<div id="aiModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3>AI Suggestion</h3>
+        <div class="modal-body">
+            <div>
+                <img id="aiActorImage" src="" alt="Actor Image">
+                <p class="actor-name" id="aiActorName"></p> 
+            </div>
+            <div class="modal-info">
+                <p id="aiReasoning"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% if roles %}
+    {% for role in roles %}
+        <div class="centered-container">
+            <div class="role-container" data-role="{{ role['role_name'] }}">
+                <div class="role-buttons">
+                    <button class="assign-btn" onclick="assignActor(`{{ role['role_name']|escape }}`)">Assign</button>
+                    <button class="ai-btn" onclick="askAI(`{{ role['role_name']|escape }}`)">Ask AI</button>
+
+                </div>
+
+                <h3>Role: {{ role['role_name'] }}</h3>
+                <p><strong>Gender:</strong> {{ role['gender'] }}</p>
+                <p><strong>Age Range:</strong> {{ role['age_range'] }}</p>
+                <p><strong>Race:</strong> {{ role.get('race', 'N/A') }}</p>
+                <p><strong>Languages Spoken:</strong> {{ ', '.join(role.get('languages_spoken', ['N/A'])) }}</p>
+                <p><strong>Physical Traits:</strong> {{ role['physical_traits'] }}</p>
+                <p><strong>Personality Traits:</strong> {{ role['personality_traits'] }}</p>
+                <p><strong>Notable Characteristics:</strong> {{ role['notable_characteristics'] }}</p>
+            </div>
+        </div>
+
+        {% if matches[role.role_name] %}
+            <div class="centered-container">
+                <div class="actors-container" data-role="{{ role['role_name'] }}">
+                    <h4 class="matching-actors">Matching Actors:</h4>
+                    <div class="actors-grid">
+                        {% for actor in matches[role.role_name] %}
+                            {% if actor != "No matching actors found." %}
+                                <div class="actor-card" data-role="{{ role['role_name'] }}">
+                                    <input type="checkbox" class="actor-checkbox" name="selected_actors" value="{{ actor.name }}" data-actor-id="{{ actor['_id'] }}">
+                                    
+                                    <img src="{{ actor.image_url }}" alt="{{ actor.name }}">
+                                    <div class="actor-info">
+                                        <h3>{{ actor.name }}</h3>
+                                        <p>{{ actor.age }} years old</p>
+                                        <p>{{ actor.location }}</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <p>No matching actors found.</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+
+<style>
+  
+    .centered-container {
+        width: 66%; 
+        margin: 0 auto; 
+        margin-top: 40px;
+    }
+
+    .filters-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .dropdown-container {
+        display: flex;
+        align-items: center;
+    }
+
+    .script-label, .role-label {
+        font-size: 1.2em;
+        margin-right: 10px;
+    }
+
+    select {
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #444;
+        color: white;
+        border: none;
+        font-size: 1.1em;
+    }
+
+    .find-roles-btn {
+        padding: 10px 20px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.1em;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+
+    .find-roles-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .right-dropdown {
+        display: flex;
+        align-items: center;
+    }
+
+    .filter-tag {
+        margin-left: 10px;
+        background-color: #666;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.9em;
+    }
+
+    .role-container {
+        background-color: #222;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        width: 100%;
+        position: relative; 
+    }
+    
+     .role-buttons {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .assign-btn, .ai-btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 5px;
+        font-size: 0.9em;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s ease-in-out;
+        
+    }
+
+    .assign-btn {
+        background-color: #007BFF;
+        color: white;
+    }
+
+    .assign-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .ai-btn {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .ai-btn:hover {
+        background-color: #1e7e34;
+    }
+    
+    .actors-container {
+        background-color: #333;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        width: 100%;
+        text-align: left; 
+    }
+
+    .actors-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        justify-content: center;
+        justify-items: center;
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .actor-card {
+        background-color: #1E1E1E;
+        border-radius: 10px;
+        overflow: hidden;
+        text-align: center;
+        width: 180px;
+        padding-bottom: 10px;
+        cursor: pointer;
+        position: relative; 
+    }
+
+    .actor-card img {
+        width: 100%;
+        height: auto;
+    }
+
+    .actor-info {
+        padding: 5px;
+    }
+
+    .actor-info h3 {
+        margin: 10px 0 5px;
+        font-size: 18px;
+    }
+
+    .actor-info p {
+        margin: 0;
+        font-size: 14px;
+        color: #bbb;
+    }
+
+    .actor-checkbox {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        opacity: 0.8;
+    }
+
+    .actor-checkbox:hover {
+        opacity: 1;
+    }
+
+    .matching-actors{
+        padding: 5px;
+        margin-bottom: 10px;
+        font-size: 30px;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: #222;
+        padding: 20px;
+        border-radius: 8px;
+        width: 750px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        position: relative; 
+    }
+
+    .close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-body {
+        display: flex;
+        align-items: flex-start; 
+        gap: 20px;
+    }
+
+   
+    .modal-body img {
+        width: 120px;
+        height: 120px;
+        border-radius: 10px;
+    }
+
+    
+    .modal-info {
+        flex: 1;
+        text-align: left;
+    }
+
+    .actor-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 10px;
+        text-align: center;
+    }
+
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const roleDropdown = document.getElementById("roleDropdown");
+        const filterTag = document.getElementById("filterTag");
+        const roleContainers = document.querySelectorAll(".role-container");
+        const actorContainers = document.querySelectorAll(".actors-container");
+
+        roleDropdown.addEventListener("change", function () {
+            const selectedRole = roleDropdown.value;
+
+            if (selectedRole === "all") {
+                filterTag.textContent = "Showing: All Roles";
+                roleContainers.forEach(role => role.style.display = "block");
+                actorContainers.forEach(grid => grid.style.display = "block");
+            } else {
+                filterTag.textContent = "Showing: " + selectedRole;
+                
+                roleContainers.forEach(role => {
+                    role.style.display = role.dataset.role === selectedRole ? "block" : "none";
+                });
+
+                actorContainers.forEach(grid => {
+                    grid.style.display = grid.dataset.role === selectedRole ? "block" : "none";
+                });
+            }
+        });
+    });
+
+    function askAI(roleName) {
+        let selectedActors = [];
+        let actorImages = {}; // Store actor names and images
+
+        document.querySelectorAll(`.actors-container[data-role='${roleName}'] .actor-card`).forEach(card => {
+            let checkbox = card.querySelector(".actor-checkbox");
+            if (checkbox.checked) {
+                let actorName = checkbox.value;
+                let actorImage = card.querySelector("img").src;
+                selectedActors.push(actorName);
+                actorImages[actorName] = actorImage;
+            }
+        });
+
+        if (selectedActors.length === 0) {
+            alert("Please select at least one actor for AI to evaluate.");
+            return;
+        }
+
+        fetch('/ask_ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role_name: roleName, actors: selectedActors })
+        })
+        .then(response => response.json())
+        .then(data => {
+            let bestActor = data.best_actor;
+            let reasoning = data.reasoning;
+
+            document.getElementById('aiActorImage').src = actorImages[bestActor];
+            document.getElementById('aiActorName').innerText = `${bestActor}`;
+            document.getElementById('aiReasoning').innerText = `Using OpenAI, we think ${bestActor} is the best fit for this role because: ${reasoning}`;
+
+            document.getElementById('aiModal').style.display = "flex";
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function closeModal() {
+        document.getElementById('aiModal').style.display = "none";
+    }
+
+    function assignActor(roleName) {
+        let selectedActors = [];
+
+        document.querySelectorAll(`.actors-container[data-role='${roleName}'] .actor-card`).forEach(card => {
+            let checkbox = card.querySelector(".actor-checkbox");
+            if (checkbox.checked) {
+                selectedActors.push({
+                    id: checkbox.getAttribute("data-actor-id"), // Retrieve actor ID
+                    name: checkbox.value
+                });
+            }
+        });
+
+        if (selectedActors.length === 0) {
+            alert("Please select one actor to assign to this role.");
+            return;
+        }
+
+        if (selectedActors.length > 1) {
+            alert("You can only assign one actor per role. Please select only one.");
+            return;
+        }
+
+        let selectedActorId = selectedActors[0].id;
+
+        fetch('/assign_actor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role_name: roleName, actor_id: selectedActorId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Assigned!");
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+
+{% endblock %}
